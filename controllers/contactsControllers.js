@@ -1,78 +1,102 @@
-import contactsService from "../services/contactsServices.js";
-import {
-  createContactSchema,
-  updateContactSchema,
-} from "../schemas/contactsSchemas.js";
+import Contact from "../models/contact.js";
+import HttpError from "../helpers/HttpError.js";
 
-const ctrlWrapper = (ctrl) => async (req, res, next) => {
+export const getAllContacts = async (req, res, next) => {
   try {
-    await ctrl(req, res, next);
+    const contacts = await Contact.find();
+    res.status(200).json(contacts);
   } catch (error) {
     next(error);
   }
 };
 
-export const getAllContacts = ctrlWrapper(async (req, res, next) => {
-  const contacts = await contactsService.listContacts();
-  res.status(200).json(contacts);
-});
+export const getOneContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const contact = await Contact.findById(id);
 
-export const getOneContact = ctrlWrapper(async (req, res, next) => {
-  const { id } = req.params;
-  const contact = await contactsService.getContactById(id);
-  if (contact) {
+    if (!contact) {
+      return res.status(404).json({ message: HttpError(404).message });
+    }
+
     res.status(200).json(contact);
-  } else {
-    res.status(404).json({ message: "Not found" });
+  } catch (error) {
+    next(error);
   }
-});
+};
 
-export const deleteContact = ctrlWrapper(async (req, res, next) => {
-  const { id } = req.params;
-  const deletedContact = await contactsService.removeContact(id);
-  if (deletedContact) {
+export const deleteContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const deletedContact = await Contact.findByIdAndDelete(id);
+
+    if (!deletedContact) {
+      return res.status(404).json({ message: HttpError(404).message });
+    }
+
     res.status(200).json(deletedContact);
-  } else {
-    res.status(404).json({ message: "Not found" });
+  } catch (error) {
+    next(error);
   }
-});
+};
 
-export const createContact = ctrlWrapper(async (req, res, next) => {
-  const { name, email, phone } = req.body;
+export const createContact = async (req, res, next) => {
+  try {
+    const contact = {
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      favorite: req.body.favorite,
+    };
 
-  const { error } = createContactSchema.validate({ name, email, phone });
-  if (error) {
-    return res.status(400).json({ message: error.message });
+    const createdContact = await Contact.create(contact);
+    res.status(201).json(createdContact);
+  } catch (error) {
+    next(error);
   }
+};
 
-  const createdContact = await contactsService.addContact(name, email, phone);
-  res.status(201).json({
-    id: createdContact.id,
-    name: createdContact.name,
-    email: createdContact.email,
-    phone: createdContact.phone,
-  });
-});
+export const updateContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
 
-export const updateContact = ctrlWrapper(async (req, res, next) => {
-  const { id } = req.params;
-  const { body } = req;
+    const contact = {
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+    };
 
-  if (Object.keys(body).length === 0) {
-    return res
-      .status(400)
-      .json({ message: "Body must have at least one field" });
-  }
+    const updatedContact = await Contact.findByIdAndUpdate(id, contact, {
+      new: true,
+    });
 
-  const { error } = updateContactSchema.validate(body);
-  if (error) {
-    return res.status(400).json({ message: error.message });
-  }
+    if (!updatedContact) {
+      return res.status(404).json({ message: HttpError(404).message });
+    }
 
-  const updatedContact = await contactsService.updateContact(id, body);
-  if (updatedContact) {
     res.status(200).json(updatedContact);
-  } else {
-    res.status(404).json({ message: "Not found" });
+  } catch (error) {
+    next(error);
   }
-});
+};
+
+export const updateFavorite = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const body = {
+      favorite: req.body.favorite,
+    };
+
+    const updateStatusContact = await Contact.findByIdAndUpdate(id, body, {
+      new: true,
+    });
+
+    if (!updateStatusContact) {
+      return res.status(404).json({ message: HttpError(404).message });
+    }
+
+    res.status(200).json(updateStatusContact);
+  } catch (error) {
+    next(error);
+  }
+};

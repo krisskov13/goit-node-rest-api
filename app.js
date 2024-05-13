@@ -1,7 +1,8 @@
 import express from "express";
 import morgan from "morgan";
 import cors from "cors";
-
+import "dotenv/config";
+import "./server.js";
 import contactsRouter from "./routes/contactsRouter.js";
 
 const app = express();
@@ -16,8 +17,8 @@ app.use((_, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-app.use((err, req, res, next) => {
-  const { status = 500, message = "Server error" } = err;
+app.use((error, req, res, next) => {
+  const { status = 500, message = "Server error" } = error;
   res.status(status).json({ message });
 });
 
