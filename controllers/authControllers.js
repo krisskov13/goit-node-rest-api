@@ -35,7 +35,7 @@ export const login = async (req, res, next) => {
     }
 
     const isMatch = await bcrypt.compare(password, exist.password);
-    if (isMatch === false) {
+    if (!isMatch) {
       throw HttpError(401, "Email or password is wrong");
     }
 
