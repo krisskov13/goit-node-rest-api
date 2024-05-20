@@ -3,7 +3,8 @@ import HttpError from "../helpers/HttpError.js";
 
 export const getAllContacts = async (req, res, next) => {
   try {
-    const contacts = await Contact.find();
+    const { _id: owner } = req.user;
+    const contacts = await Contact.find({ owner });
     res.status(200).json(contacts);
   } catch (error) {
     next(error);
@@ -13,10 +14,11 @@ export const getAllContacts = async (req, res, next) => {
 export const getOneContact = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const contact = await Contact.findById(id);
+    const { _id: owner } = req.user;
+    const contact = await Contact.findOne({ id, owner });
 
     if (!contact) {
-      return res.status(404).json({ message: HttpError(404).message });
+      throw HttpError(404);
     }
 
     res.status(200).json(contact);
@@ -28,10 +30,11 @@ export const getOneContact = async (req, res, next) => {
 export const deleteContact = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const deletedContact = await Contact.findByIdAndDelete(id);
+    const { _id: owner } = req.user;
+    const deletedContact = await Contact.findByIdAndDelete({ id, owner });
 
     if (!deletedContact) {
-      return res.status(404).json({ message: HttpError(404).message });
+      throw HttpError(404);
     }
 
     res.status(200).json(deletedContact);
@@ -42,14 +45,8 @@ export const deleteContact = async (req, res, next) => {
 
 export const createContact = async (req, res, next) => {
   try {
-    const contact = {
-      name: req.body.name,
-      email: req.body.email,
-      phone: req.body.phone,
-      favorite: req.body.favorite,
-    };
-
-    const createdContact = await Contact.create(contact);
+    const { _id: owner } = req.user;
+    const createdContact = await Contact.create({ ...req.body, owner });
     res.status(201).json(createdContact);
   } catch (error) {
     next(error);
@@ -59,19 +56,17 @@ export const createContact = async (req, res, next) => {
 export const updateContact = async (req, res, next) => {
   try {
     const { id } = req.params;
-
-    const contact = {
-      name: req.body.name,
-      email: req.body.email,
-      phone: req.body.phone,
-    };
-
-    const updatedContact = await Contact.findByIdAndUpdate(id, contact, {
-      new: true,
-    });
+    const { _id: owner } = req.user;
+    const updatedContact = await Contact.findByIdAndUpdate(
+      { id, owner },
+      req.body,
+      {
+        new: true,
+      }
+    );
 
     if (!updatedContact) {
-      return res.status(404).json({ message: HttpError(404).message });
+      throw HttpError(404);
     }
 
     res.status(200).json(updatedContact);
@@ -83,16 +78,21 @@ export const updateContact = async (req, res, next) => {
 export const updateFavorite = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { _id: owner } = req.user;
     const body = {
       favorite: req.body.favorite,
     };
 
-    const updateStatusContact = await Contact.findByIdAndUpdate(id, body, {
-      new: true,
-    });
+    const updateStatusContact = await Contact.findByIdAndUpdate(
+      { id, owner },
+      body,
+      {
+        new: true,
+      }
+    );
 
     if (!updateStatusContact) {
-      return res.status(404).json({ message: HttpError(404).message });
+      throw HttpError(404);
     }
 
     res.status(200).json(updateStatusContact);
