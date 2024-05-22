@@ -129,7 +129,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-tmp*/
+tmp/*
 !tmp/.gitkeep
-public/avatars*
+public/avatars/*
 !public/avatars/.gitkeep
