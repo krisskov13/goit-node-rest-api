@@ -1,7 +1,11 @@
+import * as fs from "node:fs/promises";
+import path from "node:path";
 import HttpError from "../helpers/HttpError.js";
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import gravatar from "gravatar";
+import Jimp from "jimp";
 
 export const register = async (req, res, next) => {
   try {
@@ -13,7 +17,13 @@ export const register = async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const createdUser = await User.create({ password: passwordHash, email });
+
+    const avatarURL = gravatar.url(email, { protocol: "http" });
+    const createdUser = await User.create({
+      password: passwordHash,
+      email,
+      avatarURL,
+    });
     res.status(201).json({
       user: {
         email: createdUser.email,
@@ -73,6 +83,32 @@ export const current = async (req, res, next) => {
   try {
     const { email, subscription } = req.user;
     res.status(200).json({ email, subscription });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadAvatars = async (req, res, next) => {
+  try {
+    const { path: tempPath, filename } = req.file;
+
+    const avatar = await Jimp.read(tempPath);
+    await avatar.resize(250, 250).writeAsync(tempPath);
+
+    await fs.rename(tempPath, path.resolve("public/avatars", filename));
+
+    const avatarURL = `/avatars/${filename}`;
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatarURL },
+      { new: true }
+    );
+
+    if (!user) {
+      throw HttpError(401, "Not authorized");
+    }
+
+    res.status(200).json({ avatarURL });
   } catch (error) {
     next(error);
   }
