@@ -104,10 +104,6 @@ export const uploadAvatars = async (req, res, next) => {
       { new: true }
     );
 
-    if (!user) {
-      throw HttpError(401, "Not authorized");
-    }
-
     res.status(200).json({ avatarURL });
   } catch (error) {
     next(error);
