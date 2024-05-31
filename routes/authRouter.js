@@ -7,6 +7,7 @@ import {
   logout,
   current,
   uploadAvatars,
+  verify,
 } from "../controllers/authControllers.js";
 import { auth } from "../middleware/auth.js";
 import upload from "../middleware/upload.js";
@@ -18,5 +19,6 @@ authRouter.post("/login", validateBody(createLoginSchema), login);
 authRouter.post("/logout", auth, logout);
 authRouter.post("/current", auth, current);
 authRouter.patch("/avatars", auth, upload.single("avatar"), uploadAvatars);
+authRouter.get("/verify/:verificationToken", verify);
 
 export default authRouter;
